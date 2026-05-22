@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to Discord Webhook</title>
+    <link rel="icon" href="https://icon-icons.com/download-file?file=https%3A%2F%2Fimages.icon-icons.com%2F3169%2FPNG%2F512%2Fdiscord_logo_icon_193568.png&id=193568&pack_or_individual=pack" type="image/png">
+    <style>
+        :root {
+            --primary: #5865f2;
+            --primary-dark: #4752c4;
+            --secondary: #f04747;
+            --success: #43b581;
+            --bg-dark: #0d0d0d;
+            --bg-darker: #111;
+            --bg-card: rgba(30, 30, 30, 0.7);
+            --text-light: #fff;
+            --text-muted: #b9bbbe;
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --line-color: rgba(88, 101, 242, 0.15);
+            --line-color-hover: rgba(88, 101, 242, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            color: var(--text-light);
+            line-height: 1.6;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background lines container */
+        .background-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        .line {
+            position: absolute;
+            background: var(--line-color);
+            transform-origin: 0 0;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(88, 101, 242, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(240, 71, 71, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 50% 50%, rgba(67, 181, 129, 0.05) 0%, transparent 30%);
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            z-index: 10;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transition: var(--transition);
+        }
+
+        .container:hover {
+            transform: translateZ(20px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: #5865f2;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.2rem;
+            position: relative;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: #8d97ff;
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 1rem 2.5rem 1rem 1rem; /* Space for the eye icon */
+            border: none;
+            border-radius: var(--border-radius);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        input[type="password"]:focus, input[type="text"]:focus {
+            outline: none;
+            background: rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        .toggle-password:hover {
+            color: var(--primary);
+            background: rgba(88, 101, 242, 0.1);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .toggle-password:active {
+            transform: translateY(-50%) scale(0.9);
+        }
+
+        input[type="file"] {
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            margin-right: 0.5rem;
+            border: none;
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        .file-info {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            min-height: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .file-count {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .batch-info {
+            font-size: 0.8rem;
+            color: #ff9500;
+            margin-top: 0.25rem;
+        }
+
+        #status {
+            margin-top: 1.5rem;
+            min-height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .success {
+            color: var(--success);
+        }
+
+        .error {
+            color: var(--secondary);
+        }
+
+        .warning {
+            color: #ff9500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .password-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            input[type="password"] {
+                padding: 1rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .toggle-password {
+                position: static;
+                transform: none;
+                margin: 0 auto;
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+        }
+
+        /* Add some floating elements for decoration */
+        .floating-element {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 50%;
+            opacity: 0.1;
+        }
+
+        .floating-element:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            background: var(--primary);
+            top: -100px;
+            right: -100px;
+            animation: drift 15s alternate infinite ease-in-out;
+        }
+
+        .floating-element:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            background: var(--success);
+            bottom: -50px;
+            left: -50px;
+            animation: drift 12s alternate infinite ease-in-out 3s;
+        }
+
+        .floating-element:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            background: var(--secondary);
+            top: 50%;
+            left: 10%;
+            animation: drift 18s alternate infinite ease-in-out 6s;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(100px, -100px) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-lines" id="backgroundLines"></div>
+    
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    <div class="floating-element"></div>
+    
+    <div class="container">
+        <h1>Discord Image Sender</h1>
+        
+        <div class="input-group">
+            <label for="webhookUrl">Discord Webhook URL:</label>
+            <div class="password-container">
+                <input type="password" id="webhookUrl" placeholder="Enter your Discord webhook URL here">
+                <button type="button" class="toggle-password" id="toggleWebhook">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="imageInput">Select Images:</label>
+            <input type="file" id="imageInput" accept="image/*" multiple>
+            <div class="file-info" id="fileInfo">
+                <span>No files selected</span>
+                <span class="file-count">0</span>
+            </div>
+            <div class="batch-info" id="batchInfo">Select images and enter webhook URL to begin</div>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // Background lines effect
+        const backgroundLines = document.getElementById('backgroundLines');
+        const lineCount = 50; // Number of background lines
+        
+        // Create initial lines
+        function createLines() {
+            // Clear existing lines
+            backgroundLines.innerHTML = '';
+            
+            // Create new lines
+            for (let i = 0; i < lineCount; i++) {
+                const line = document.createElement('div');
+                line.className = 'line';
+                
+                // Random position and size
+                const x1 = Math.random() * window.innerWidth;
+                const y1 = Math.random() * window.innerHeight;
+                const length = Math.random() * 100 + 50;
+                const angle = Math.random() * Math.PI * 2;
+                const thickness = Math.random() * 1 + 0.5;
+                
+                line.style.left = `${x1}px`;
+                line.style.top = `${y1}px`;
+                line.style.width = `${length}px`;
+                line.style.height = `${thickness}px`;
+                line.style.background = 'var(--line-color)';
+                line.style.transform = `rotate(${angle}rad)`;
+                
+                backgroundLines.appendChild(line);
+            }
+        }
+        
+        // Update lines on mouse move
+        function updateLinesOnMouseMove(e) {
+            const lines = backgroundLines.querySelectorAll('.line');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            lines.forEach(line => {
+                const lineRect = line.getBoundingClientRect();
+                const lineX = lineRect.left + lineRect.width / 2;
+                const lineY = lineRect.top + lineRect.height / 2;
+                
+                // Calculate distance from mouse
+                const dx = mouseX - lineX;
+                const dy = mouseY - lineY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Effect intensifies as mouse gets closer
+                const maxDistance = 200;
+                if (distance < maxDistance) {
+                    const intensity = 1 - (distance / maxDistance);
+                    line.style.background = `var(--line-color-hover)`;
+                    line.style.opacity = 0.5 + intensity * 0.5;
+                    
+                    // Slight movement based on mouse position
+                    const moveX = (dx / 100) * intensity;
+                    const moveY = (dy / 100) * intensity;
+                    line.style.transform = `rotate(${line.style.transform.match(/rotate\(([^)]+)/)[1]}rad) translate(${moveX}px, ${moveY}px)`;
+                } else {
+                    line.style.background = 'var(--line-color)';
+                    line.style.opacity = '0.3';
+                    // Reset transform to just rotation
+                    const currentRotation = line.style.transform.match(/rotate\(([^)]+)/);
+                    if (currentRotation) {
+                        line.style.transform = `rotate(${currentRotation[1]}rad)`;
+                    }
+                }
+            });
+        }
+        
+        // Initialize
+        createLines();
+        
+        // Handle window resize
+        window.addEventListener('resize', createLines);
+        
+        // Handle mouse movement
+        document.addEventListener('mousemove', updateLinesOnMouseMove);
+        
+        // Batch processing constants
+        const BATCH_SIZE = 5;
+        const STORAGE_KEY = 'discordWebhookUrl';
+        
+        // File input handling
+        const imageInput = document.getElementById('imageInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileCountSpan = fileInfo.querySelector('.file-count');
+        const fileInfoSpan = fileInfo.querySelector('span:first-child');
+        const batchInfo = document.getElementById('batchInfo');
+        const statusDiv = document.getElementById('status');
+        const webhookUrlInput = document.getElementById('webhookUrl');
+        const toggleButton = document.getElementById('toggleWebhook');
+        
+        // Load webhook URL from localStorage if available
+        function loadWebhookUrl() {
+            const savedUrl = localStorage.getItem(STORAGE_KEY);
+            if (savedUrl) {
+                webhookUrlInput.value = savedUrl;
+            }
+        }
+        
+        // Save webhook URL to localStorage
+        function saveWebhookUrl(url) {
+            if (url.trim()) {
+                localStorage.setItem(STORAGE_KEY, url.trim());
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+        
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            if (webhookUrlInput.type === 'password') {
+                webhookUrlInput.type = 'text';
+                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 0.5-6A18.45 18.45 0 0 1 0 5a18.45 18.45 0 0 1 12 5.82"></path></svg>';
+            } else {
+                webhookUrlInput.type = 'password';
+                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        }
+        
+        // Update file info display
+        function updateFileInfo() {
+            const files = imageInput.files;
+            if (files.length === 0) {
+                fileInfoSpan.textContent = 'No files selected';
+                fileCountSpan.textContent = `0`;
+            } else if (files.length === 1) {
+                fileInfoSpan.textContent = `${files[0].name} (${formatFileSize(files[0].size)})`;
+                fileCountSpan.textContent = `1`;
+            } else {
+                let totalSize = 0;
+                for (const file of files) {
+                    totalSize += file.size;
+                }
+                fileInfoSpan.textContent = `${files.length} files selected (${formatFileSize(totalSize)})`;
+                fileCountSpan.textContent = `${files.length}`;
+            }
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+        
+        // Process all files in batches
+        async function processAllBatches(files) {
+            const webhookUrl = document.getElementById('webhookUrl').value.trim();
+            
+            // Clear previous status
+            statusDiv.textContent = '';
+            statusDiv.className = '';
+            
+            // Validate inputs
+            if (!webhookUrl) {
+                statusDiv.textContent = 'Please enter a Discord webhook URL';
+                statusDiv.className = 'error';
+                return;
+            }
+            
+            // Save webhook URL to localStorage
+            saveWebhookUrl(webhookUrl);
+            
+            // Convert FileList to array for easier manipulation
+            const filesArray = Array.from(files);
+            let remainingFiles = [...filesArray];
+            let batchNumber = 1;
+            
+            // Update UI to show we're starting
+            batchInfo.textContent = `Starting to send ${filesArray.length} images in batches of ${BATCH_SIZE}...`;
+            statusDiv.textContent = `Preparing to send...`;
+            statusDiv.className = 'warning';
+            
+            // Process batches until no files remain
+            while (remainingFiles.length > 0) {
+                // Get current batch (first BATCH_SIZE files)
+                const batchFiles = remainingFiles.slice(0, BATCH_SIZE);
+                
+                // Update remaining files (remove sent batch)
+                remainingFiles = remainingFiles.slice(BATCH_SIZE);
+                
+                // Calculate total batches for display
+                const totalBatches = Math.ceil(filesArray.length / BATCH_SIZE);
+                
+                // Update UI
+                batchInfo.textContent = `Sending batch ${batchNumber}/${totalBatches} (${batchFiles.length} images)...`;
+                statusDiv.textContent = `Processing batch ${batchNumber}...`;
+                statusDiv.className = 'warning';
+                
+                // Validate file types in batch
+                const invalidFiles = batchFiles.filter(file => !file.type.startsWith('image/'));
+                if (invalidFiles.length > 0) {
+                    statusDiv.textContent = 'Please select only image files';
+                    statusDiv.className = 'error';
+                    return;
+                }
+                
+                // Optional: validate total size (e.g., 25MB limit for Discord)
+                const totalSize = batchFiles.reduce((sum, file) => sum + file.size, 0);
+                const maxSize = 25 * 1024 * 1024; // 25MB
+                if (totalSize > maxSize) {
+                    statusDiv.textContent = `Total file size exceeds ${formatFileSize(maxSize)} limit`;
+                    statusDiv.className = 'error';
+                    return;
+                }
+                
+                try {
+                    // Create FormData to send as multipart/form-data
+                    const formData = new FormData();
+                    
+                    // Add all files in this batch
+                    batchFiles.forEach((file, index) => {
+                        formData.append('file' + index, file);
+                    });
+                    
+                    // Optional: add a message content
+                    // formData.append('content', `${batchFiles.length} image${batchFiles.length > 1 ? 's' : ''} uploaded via web app`);
+                    
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        statusDiv.textContent = `Batch ${batchNumber}/${totalBatches} sent successfully!`;
+                        statusDiv.className = 'success';
+                        
+                        // Wait a bit before sending next batch (optional, for better UX)
+                        if (remainingFiles.length > 0) {
+                            // Brief pause between batches
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    } else {
+                        const errorText = await response.text();
+                        statusDiv.textContent = `Error: ${response.status} - ${errorText}`;
+                        statusDiv.className = 'error';
+                        return;
+                    }
+                } catch (error) {
+                    statusDiv.textContent = 'Network error: ' + error.message;
+                    statusDiv.className = 'error';
+                    return;
+                }
+                
+                batchNumber++;
+            }
+            
+            // All batches sent
+            batchInfo.textContent = 'All images sent!';
+            statusDiv.textContent = `All ${filesArray.length} images sent in ${batchNumber - 1} batch${batchNumber - 1 > 1 ? 'es' : ''}!`;
+            statusDiv.className = 'success';
+            
+            // Reset file input for next use (keep webhook URL in localStorage)
+            imageInput.value = '';
+            updateFileInfo();
+            batchInfo.textContent = 'Webhook URL saved. Select new images to send.';
+        }
+        
+        // Event listeners
+        imageInput.addEventListener('change', () => {
+            const files = imageInput.files;
+            
+            // Update file info
+            updateFileInfo();
+            
+            // Update batch info
+            if (files.length === 0) {
+                batchInfo.textContent = 'No images selected';
+            } else {
+                const totalBatches = Math.ceil(files.length / BATCH_SIZE);
+                batchInfo.textContent = `${totalBatches} batch${totalBatches > 1 ? 'es' : ''} ready to send`;
+            }
+            
+            // If webhook URL is already present, start processing
+            const webhookUrl = webhookUrlInput.value.trim();
+            if (webhookUrl) {
+                processAllBatches(files);
+            }
+        });
+        
+        // Webhook URL input handling
+        webhookUrlInput.addEventListener('change', () => {
+            // Trigger processing when URL changes and files are selected
+            if (imageInput.files.length > 0) {
+                processAllBatches(imageInput.files);
+            }
+            
+            // Save to localStorage when changed
+            saveWebhookUrl(webhookUrlInput.value);
+        });
+        
+        // Also trigger on Enter key press in URL input
+        webhookUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && imageInput.files.length > 0) {
+                processAllBatches(imageInput.files);
+            }
+            
+            // Save to localStorage
+            saveWebhookUrl(webhookUrlInput.value);
+        });
+        
+        // Toggle password visibility
+        toggleButton.addEventListener('click', togglePasswordVisibility);
+        
+        // Initialize
+        loadWebhookUrl();
+        updateFileInfo();
+    </script>
+</body>
+</html>
